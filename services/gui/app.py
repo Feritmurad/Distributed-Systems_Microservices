@@ -1,5 +1,6 @@
 from flask import Flask, render_template, redirect, request, url_for
 import requests
+import json
 
 app = Flask(__name__)
 
@@ -65,10 +66,9 @@ def actual_login():
     # Also pay attention to the status code returned by the microservice.
     # ================================
 
-    response = requests.post("http://users:5000/users/login/?username=" + req_username + "&password=" + req_password).json()
+    response = requests.post("http://users:5000/users/login/?username=" + req_username + "&password=" + req_password)
 
-
-    success = response  # TODO: call
+    if response.status_code == 200 : success = response.json()  # TODO: call
 
     save_to_session('success', success)
     if success:
@@ -100,9 +100,9 @@ def actual_register():
     # Registration is successful if a user with the same username doesn't exist yet.
     # ===============================+
 
-    response = requests.post("http://users:5000/users/register/?username=" + req_username + "&password=" + req_password).json()
+    response = requests.post("http://users:5000/users/register/?username=" + req_username + "&password=" + req_password)
 
-    success = response  # TODO: call
+    if response.status_code == 200 : success = response.json()  # TODO: call
     save_to_session('success', success)
 
     if success:
@@ -126,11 +126,16 @@ def friends():
     # Get a list of friends for the currently logged-in user
     # ================================
 
+    friend_list = [] # TODO: call
     if username is not None:
-        friend_list = []
-    else:
-        friend_list = []  # TODO: call
+        response = requests.get("http://users:5000/users/friends/?username=" + username)
 
+        if response.status_code == 200:
+            temp_list = response.json()
+            friend_list = [item for sublist in temp_list for item in sublist] # TODO: call
+    else:
+        pass
+    print(friend_list,flush=True)
     return render_template('friends.html', username=username, password=password, success=success, friend_list=friend_list)
 
 
@@ -147,10 +152,10 @@ def add_friend():
     global username
     req_username = request.form['username']
 
-    response = requests.post("http://users:5000/users/add_friend/?username1=" + username + "&username2=" + req_username).json()
+    response = requests.post("http://users:5000/users/add_friend/?username1=" + username + "&username2=" + req_username)
 
 
-    success = response  # TODO: call
+    if response.status_code == 200 : success = response.json()  # TODO: call
     save_to_session('success', success)
 
     return redirect('/friends')

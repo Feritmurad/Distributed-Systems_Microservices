@@ -58,11 +58,12 @@ def add_friends(username1,username2):
                 cur.execute("INSERT INTO friends (username1, username2) VALUES (%s, %s);", (username1, username2))
                 conn.commit()
                 return True
-
     return False
 
-
-
+def all_friends(username):
+    cur = conn.cursor()
+    cur.execute("SELECT CASE WHEN username1 = %s THEN username2 WHEN username2 = %s THEN username1 ELSE NULL END AS friend_username FROM friends WHERE username1 = %s OR username2 = %s;", (username,username,username,username))
+    return cur.fetchall()
 
 class Register(Resource):
     def post(self):
@@ -81,6 +82,11 @@ class AddFriend(Resource):
     def post(self):
         args = flask_request.args
         return add_friends(args['username1'],args['username2'])
+    
+class Friends(Resource):
+    def get(self):
+        args = flask_request.args
+        return all_friends(args['username'])
 
 
 
@@ -89,4 +95,5 @@ class AddFriend(Resource):
 api.add_resource(Register, '/users/register/')
 api.add_resource(Login, '/users/login/')
 api.add_resource(AddFriend, '/users/add_friend/')
+api.add_resource(Friends, '/users/friends/')
 

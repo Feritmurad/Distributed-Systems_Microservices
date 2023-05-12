@@ -2,6 +2,7 @@ from flask import Flask
 from flask import request as flask_request
 from flask_restful import Resource, Api, reqparse
 import psycopg2
+import json
 
 parser = reqparse.RequestParser()
 parser.add_argument('title')
