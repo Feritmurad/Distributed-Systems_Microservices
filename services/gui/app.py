@@ -64,7 +64,11 @@ def actual_login():
     # microservice returns True if correct combination, False if otherwise.
     # Also pay attention to the status code returned by the microservice.
     # ================================
-    success = None  # TODO: call
+
+    response = requests.post("http://users:5000/users/login/?username=" + req_username + "&password=" + req_password).json()
+
+
+    success = response  # TODO: call
 
     save_to_session('success', success)
     if success:
@@ -94,18 +98,11 @@ def actual_register():
     # microservice returns True if registration is succesful, False if otherwise.
     #
     # Registration is successful if a user with the same username doesn't exist yet.
-    # ================================
+    # ===============================+
 
-    #url = "http://localhost:5002/accounts/register/"
-    #params = {"name": req_username, "pwd": req_password}
+    response = requests.post("http://users:5000/users/register/?username=" + req_username + "&password=" + req_password).json()
 
-    #response = requests.post("http://localhost:5002/accounts/register/?name="+req_username+"&pwd="+req_password)
-    #response = requests.post("http://localhost:5002/accounts/register/?name=test&pwd=test")
-    #response = requests.post("http://localhost:5002/accounts/register/?name={}&pwd={}".format(req_username,req_password))
-    response = requests.get("http://localhost:5001/songs/")
-
-    print(response,flush=True)
-    success = None  # TODO: call
+    success = response  # TODO: call
     save_to_session('success', success)
 
     if success:
@@ -150,7 +147,10 @@ def add_friend():
     global username
     req_username = request.form['username']
 
-    success = None  # TODO: call
+    response = requests.post("http://users:5000/users/add_friend/?username1=" + username + "&username2=" + req_username).json()
+
+
+    success = response  # TODO: call
     save_to_session('success', success)
 
     return redirect('/friends')
