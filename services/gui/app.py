@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, request, url_for
+from flask import Flask, render_template, redirect, request, url_for, Response
 import requests
 import json
 
@@ -101,8 +101,15 @@ def actual_register():
     # ===============================+
 
     response = requests.post("http://users:5000/users/register/?username=" + req_username + "&password=" + req_password)
+    
 
     if response.status_code == 200 : success = response.json()  # TODO: call
+    else:
+        message = 'Failed to register'
+        status = 400
+        headers = {'Content-Type': 'text/plain'}
+        return Response(message, status=status, headers=headers)
+    
     save_to_session('success', success)
 
     if success:
@@ -125,17 +132,22 @@ def friends():
     #
     # Get a list of friends for the currently logged-in user
     # ================================
-
+    
+    headers = {'Content-Type': 'text/plain'}
+    status = 400
     friend_list = [] # TODO: call
     if username is not None:
-        response = requests.get("http://users:5000/users/friends/?username=" + username)
+        response = requests.get("http://friends:5000/friends/?username=" + username)
 
         if response.status_code == 200:
             temp_list = response.json()
             friend_list = [item for sublist in temp_list for item in sublist] # TODO: call
+        else:
+            message = 'Failed to get friends'
+            return Response(message, status=status, headers=headers)
     else:
-        pass
-    print(friend_list,flush=True)
+        message = 'Failed to get logged in user'
+        return Response(message, status=status, headers=headers)
     return render_template('friends.html', username=username, password=password, success=success, friend_list=friend_list)
 
 
@@ -152,10 +164,16 @@ def add_friend():
     global username
     req_username = request.form['username']
 
-    response = requests.post("http://users:5000/users/add_friend/?username1=" + username + "&username2=" + req_username)
+    response = requests.post("http://friends:5000/friends/add/?username1=" + username + "&username2=" + req_username)
 
 
     if response.status_code == 200 : success = response.json()  # TODO: call
+    else:
+        message = 'Failed to add friend'
+        status = 400
+        headers = {'Content-Type': 'text/plain'}
+        return Response(message, status=status, headers=headers)
+    
     save_to_session('success', success)
 
     return redirect('/friends')
@@ -175,8 +193,21 @@ def playlists():
         # Get all playlists you created and all playlist that are shared with you. (list of id, title pairs)
         # ================================
 
+        response_my = requests.get("http://playlists:5000/playlists/?username=" + username)
+        response_shared = requests.get("http://playlists:5000/playlists/shared/?username=" + username)
+
         my_playlists = []  # TODO: call
         shared_with_me = []  # TODO: call
+        if response_my.status_code == 200 and response_shared.status_code == 200  :
+            my_playlists = response_my.json()
+            shared_with_me = response_shared.json()
+        else:
+            message = 'Failed to get playlist'
+            status = 400
+            headers = {'Content-Type': 'text/plain'}
+            return Response(message, status=status, headers=headers)
+
+        
 
     return render_template('playlists.html', username=username, password=password, my_playlists=my_playlists, shared_with_me=shared_with_me)
 
@@ -191,6 +222,16 @@ def create_playlist():
     global username
     title = request.form['title']
 
+    response = requests.post("http://playlists:5000/playlists/add/?title=" + title + "&username=" + username)
+
+
+    if response.status_code == 200 : pass  # TODO: call
+    else:
+        message = 'Failed to add playlist'
+        status = 400
+        headers = {'Content-Type': 'text/plain'}
+        return Response(message, status=status, headers=headers)
+    
     # TODO: call
 
     return redirect('/playlists')
@@ -203,7 +244,23 @@ def a_playlist(playlist_id):
     #
     # List all songs within a playlist
     # ================================
+
+    response = requests.get("http://playlists:5000/playlists/songs/?playlist_id=" + str(playlist_id))
+    
     songs = [] # TODO: call
+    if response.status_code == 200:
+            temp_list = response.json()
+            print(temp_list,flush = True)
+            songs = [(x[0], x[1]) for x in temp_list] # TODO: call
+            print(songs,flush = True)
+
+    else:
+        message = 'Failed to get songs'
+        status = 400
+        headers = {'Content-Type': 'text/plain'}
+        return Response(message, status=status, headers=headers)
+
+
     return render_template('a_playlist.html', username=username, password=password, songs=songs, playlist_id=playlist_id)
 
 
@@ -215,6 +272,17 @@ def add_song_to_playlist(playlist_id):
     # Add a song (represented by a title & artist) to a playlist (represented by an id)
     # ================================
     title, artist = request.form['title'], request.form['artist']
+
+    response = requests.post("http://playlists:5000/playlists/add_song/?playlist_id=" + str(playlist_id) + "&title=" + title + "&artist=" + artist)
+
+    if response.status_code == 200 : success = response.json()  # TODO: call
+    else:
+        message = 'Failed to add song'
+        status = 400
+        headers = {'Content-Type': 'text/plain'}
+        return Response(message, status=status, headers=headers)
+
+    ######################################### FIX ALWAYS 200 even when not pushed
 
     # TODO: call
     return redirect(f'/playlists/{playlist_id}')
@@ -229,6 +297,16 @@ def invite_user_to_playlist(playlist_id):
     # ================================
     recipient = request.form['user']
 
+    response = requests.post("http://playlists:5000/playlists/share/?playlist_id=" + str(playlist_id) + "&username=" + recipient)
+
+    if response.status_code == 200 : success = response.json()  # TODO: call
+    else:
+        message = 'Failed to share playlist with ' + recipient
+        status = 400
+        headers = {'Content-Type': 'text/plain'}
+        return Response(message, status=status, headers=headers)
+
+    ######################################### FIX ALWAYS 200 even when not pushed
     # TODO: call
     return redirect(f'/playlists/{playlist_id}')
 

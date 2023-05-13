@@ -2,8 +2,36 @@ version: "3.9"
 volumes:
   users_data:  # Create a volume core_data that will contain the data for 'users_persistence', such that when the container is stopped / crashes, the data remains.
   songs_data:  # Create a volume core_data that will contain the data for 'songs_persistence', such that when the container is stopped / crashes, the data remains.
+  friends_data:  # Create a volume core_data that will contain the data for 'friends_persistence', such that when the container is stopped / crashes, the data remains.
+  playlists_data:  # Create a volume core_data that will contain the data for 'playlists_persistence', such that when the container is stopped / crashes, the data remains.
   
 services:
+  playlists_persistence:
+    image: docker.io/postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      # Map the users_persistence folder to the docker-entrypoint-initdb.d folder in the container.
+      # This will ensure that the necessary files are present in the container for initializing the database(s)
+      - ./playlists_persistence/:/docker-entrypoint-initdb.d
+      # Map the psql data from the container to a virtual volume, thus preserving the data after the container is stopped.
+      - playlists_data:/var/lib/postgresql/data
+
+  friends_persistence:
+    image: docker.io/postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      # Map the users_persistence folder to the docker-entrypoint-initdb.d folder in the container.
+      # This will ensure that the necessary files are present in the container for initializing the database(s)
+      - ./friends_persistence/:/docker-entrypoint-initdb.d
+      # Map the psql data from the container to a virtual volume, thus preserving the data after the container is stopped.
+      - friends_data:/var/lib/postgresql/data
+
   users_persistence:
     image: docker.io/postgres
     restart: always
@@ -37,14 +65,26 @@ services:
     depends_on:
       - songs_persistence
 
-  
-
   users:
     build: ./users
     ports:
       - 5002:5000
     depends_on:
       - users_persistence
+
+  friends:
+    build: ./friends
+    ports:
+      - 5003:5000
+    depends_on:
+      - friends_persistence
+  
+  playlists:
+    build: ./playlists
+    ports:
+      - 5004:5000
+    depends_on:
+      - playlists_persistence
 
   gui:
     build: ./gui
