@@ -59,7 +59,6 @@ def feed():
     else:
         feed = []
 
-    print(feed,flush=True)
     return render_template('feed.html', username=username, password=password, feed=feed)
 
 
@@ -284,10 +283,7 @@ def a_playlist(playlist_id):
         songs = [] # TODO: call
         if response.status_code == 200:
                 temp_list = response.json()
-                print(temp_list,flush = True)
                 songs = [(x[0], x[1]) for x in temp_list] # TODO: call
-                print(songs,flush = True)
-
         else:
             message = 'Failed to get songs'
             status = 400

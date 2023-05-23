@@ -62,7 +62,6 @@ def activities(username):
     for friend_username in friend_usernames:
         cur.execute("SELECT CASE WHEN username1 = %s THEN username2 WHEN username2 = %s THEN username1 ELSE NULL END AS friend_username, created_at FROM friends WHERE (username1 = %s OR username2 = %s) AND (CASE WHEN username1 = %s THEN username2 WHEN username2 = %s THEN username1 ELSE NULL END) <> %s;", (friend_username, friend_username, friend_username, friend_username, friend_username, friend_username, username))
         friend_info = cur.fetchall()
-        print(friend_info,flush=True)
         if friend_info:
             for info in friend_info:
                 friend, timestamp = info

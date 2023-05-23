@@ -70,7 +70,6 @@ def get_friends(username):
 def song_exists(title,artist):
     try:
         response = requests.get("http://songs:5000/songs/exist/?title=" + title + "&artist=" + artist)
-        print(response.status_code,flush=True)
         if response.status_code == 200 : return response.json() 
         else:
             return False
