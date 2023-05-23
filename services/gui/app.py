@@ -32,11 +32,34 @@ def feed():
 
     N = 10
 
+    feed = []
+    feed_playlist = []
+    feed_friends = []
     if username is not None:
-        feed = []  # TODO: call
+        try:
+            responseplaylists = requests.get("http://playlists:5000/playlists/activities/?username=" + username)
+            if responseplaylists.status_code == 200:
+                temp_list = responseplaylists.json()
+                feed_playlist = temp_list 
+        except requests.exceptions.ConnectionError as e:
+            # Handle the connection error when 'friends' host cannot be reached
+            print("Error: Connection to 'playlists' host failed.",flush=True)
+        try:
+            responsefriends = requests.get("http://friends:5000/friends/activities/?username=" + username)
+            if responsefriends.status_code == 200:
+                temp_list = responsefriends.json()
+                feed_friends = temp_list
+        except requests.exceptions.ConnectionError as e:
+            # Handle the connection error when 'friends' host cannot be reached
+            print("Error: Connection to 'friends' host failed.",flush=True)
+            
+        temp_list = feed_friends + feed_playlist
+        feed = sorted(temp_list, key=lambda x: x[1], reverse=False)
+        feed = feed[:N]
     else:
         feed = []
 
+    print(feed,flush=True)
     return render_template('feed.html', username=username, password=password, feed=feed)
 
 
@@ -65,10 +88,13 @@ def actual_login():
     # microservice returns True if correct combination, False if otherwise.
     # Also pay attention to the status code returned by the microservice.
     # ================================
+    try:
+        response = requests.post("http://users:5000/users/login/?username=" + req_username + "&password=" + req_password)
 
-    response = requests.post("http://users:5000/users/login/?username=" + req_username + "&password=" + req_password)
-
-    if response.status_code == 200 : success = response.json()  # TODO: call
+        if response.status_code == 200 : success = response.json()  # TODO: call
+    except requests.exceptions.ConnectionError as e:
+        # Handle the connection error when 'friends' host cannot be reached
+        print("Error: Connection to 'users' host failed.",flush=True)
 
     save_to_session('success', success)
     if success:
@@ -100,15 +126,13 @@ def actual_register():
     # Registration is successful if a user with the same username doesn't exist yet.
     # ===============================+
 
-    response = requests.post("http://users:5000/users/register/?username=" + req_username + "&password=" + req_password)
-    
-
-    if response.status_code == 200 : success = response.json()  # TODO: call
-    else:
-        message = 'Failed to register'
-        status = 400
-        headers = {'Content-Type': 'text/plain'}
-        return Response(message, status=status, headers=headers)
+    try:
+        response = requests.post("http://users:5000/users/register/?username=" + req_username + "&password=" + req_password)
+        
+        if response.status_code == 200 : success = response.json()  # TODO: call
+    except requests.exceptions.ConnectionError as e:
+            # Handle the connection error when 'friends' host cannot be reached
+            print("Error: Connection to 'users' host failed.",flush=True)
     
     save_to_session('success', success)
 
@@ -133,21 +157,22 @@ def friends():
     # Get a list of friends for the currently logged-in user
     # ================================
     
-    headers = {'Content-Type': 'text/plain'}
-    status = 400
+
     friend_list = [] # TODO: call
     if username is not None:
-        response = requests.get("http://friends:5000/friends/?username=" + username)
+        try:
+            response = requests.get("http://friends:5000/friends/?username=" + username)
+            if response.status_code == 200:
+                temp_list = response.json()
+                friend_list = [item for sublist in temp_list for item in sublist] # TODO: call
+        except requests.exceptions.ConnectionError as e:
+            # Handle the connection error when 'friends' host cannot be reached
+            print("Error: Connection to 'friends' host failed.",flush=True)
 
-        if response.status_code == 200:
-            temp_list = response.json()
-            friend_list = [item for sublist in temp_list for item in sublist] # TODO: call
-        else:
-            message = 'Failed to get friends'
-            return Response(message, status=status, headers=headers)
+
+       
     else:
-        message = 'Failed to get logged in user'
-        return Response(message, status=status, headers=headers)
+        friend_list = []
     return render_template('friends.html', username=username, password=password, success=success, friend_list=friend_list)
 
 
@@ -163,16 +188,19 @@ def add_friend():
 
     global username
     req_username = request.form['username']
+    try:
+        response = requests.post("http://friends:5000/friends/add/?username1=" + username + "&username2=" + req_username)
 
-    response = requests.post("http://friends:5000/friends/add/?username1=" + username + "&username2=" + req_username)
 
-
-    if response.status_code == 200 : success = response.json()  # TODO: call
-    else:
-        message = 'Failed to add friend'
-        status = 400
-        headers = {'Content-Type': 'text/plain'}
-        return Response(message, status=status, headers=headers)
+        if response.status_code == 200 : success = response.json()  # TODO: call
+        else:
+            message = 'Failed to add friend'
+            status = 400
+            headers = {'Content-Type': 'text/plain'}
+            return Response(message, status=status, headers=headers)
+    except requests.exceptions.ConnectionError as e:
+            # Handle the connection error when 'friends' host cannot be reached
+            print("Error: Connection to 'friends' host failed.",flush=True)
     
     save_to_session('success', success)
 
@@ -192,20 +220,24 @@ def playlists():
         #
         # Get all playlists you created and all playlist that are shared with you. (list of id, title pairs)
         # ================================
+        try:
+            response_my = requests.get("http://playlists:5000/playlists/?username=" + username)
+            response_shared = requests.get("http://playlists:5000/playlists/shared/?username=" + username)
 
-        response_my = requests.get("http://playlists:5000/playlists/?username=" + username)
-        response_shared = requests.get("http://playlists:5000/playlists/shared/?username=" + username)
-
-        my_playlists = []  # TODO: call
-        shared_with_me = []  # TODO: call
-        if response_my.status_code == 200 and response_shared.status_code == 200  :
-            my_playlists = response_my.json()
-            shared_with_me = response_shared.json()
-        else:
-            message = 'Failed to get playlist'
-            status = 400
-            headers = {'Content-Type': 'text/plain'}
-            return Response(message, status=status, headers=headers)
+            my_playlists = []  # TODO: call
+            shared_with_me = []  # TODO: call
+            if response_my.status_code == 200 and response_shared.status_code == 200  :
+                my_playlists = response_my.json()
+                shared_with_me = response_shared.json()
+            else:
+                message = 'Failed to get playlist'
+                status = 400
+                headers = {'Content-Type': 'text/plain'}
+                return Response(message, status=status, headers=headers)
+        except requests.exceptions.ConnectionError as e:
+            # Handle the connection error when 'friends' host cannot be reached
+            print("Error: Connection to 'playlists' host failed.",flush=True)
+        
 
         
 
@@ -221,18 +253,20 @@ def create_playlist():
     # ================================
     global username
     title = request.form['title']
+    try:
+        response = requests.post("http://playlists:5000/playlists/add/?title=" + title + "&username=" + username)
 
-    response = requests.post("http://playlists:5000/playlists/add/?title=" + title + "&username=" + username)
 
-
-    if response.status_code == 200 : pass  # TODO: call
-    else:
-        message = 'Failed to add playlist'
-        status = 400
-        headers = {'Content-Type': 'text/plain'}
-        return Response(message, status=status, headers=headers)
+        if response.status_code == 200 : pass  # TODO: call
+        else:
+            message = 'Failed to add playlist'
+            status = 400
+            headers = {'Content-Type': 'text/plain'}
+            return Response(message, status=status, headers=headers)
     
-    # TODO: call
+    except requests.exceptions.ConnectionError as e:
+            # Handle the connection error when 'friends' host cannot be reached
+            print("Error: Connection to 'playlists' host failed.",flush=True)
 
     return redirect('/playlists')
 
@@ -244,21 +278,24 @@ def a_playlist(playlist_id):
     #
     # List all songs within a playlist
     # ================================
+    try:
+        response = requests.get("http://playlists:5000/playlists/songs/?playlist_id=" + str(playlist_id))
+        
+        songs = [] # TODO: call
+        if response.status_code == 200:
+                temp_list = response.json()
+                print(temp_list,flush = True)
+                songs = [(x[0], x[1]) for x in temp_list] # TODO: call
+                print(songs,flush = True)
 
-    response = requests.get("http://playlists:5000/playlists/songs/?playlist_id=" + str(playlist_id))
-    
-    songs = [] # TODO: call
-    if response.status_code == 200:
-            temp_list = response.json()
-            print(temp_list,flush = True)
-            songs = [(x[0], x[1]) for x in temp_list] # TODO: call
-            print(songs,flush = True)
-
-    else:
-        message = 'Failed to get songs'
-        status = 400
-        headers = {'Content-Type': 'text/plain'}
-        return Response(message, status=status, headers=headers)
+        else:
+            message = 'Failed to get songs'
+            status = 400
+            headers = {'Content-Type': 'text/plain'}
+            return Response(message, status=status, headers=headers)
+    except requests.exceptions.ConnectionError as e:
+            # Handle the connection error when 'friends' host cannot be reached
+            print("Error: Connection to 'playlists' host failed.",flush=True)
 
 
     return render_template('a_playlist.html', username=username, password=password, songs=songs, playlist_id=playlist_id)
@@ -272,17 +309,22 @@ def add_song_to_playlist(playlist_id):
     # Add a song (represented by a title & artist) to a playlist (represented by an id)
     # ================================
     title, artist = request.form['title'], request.form['artist']
+    global username
 
-    response = requests.post("http://playlists:5000/playlists/add_song/?playlist_id=" + str(playlist_id) + "&title=" + title + "&artist=" + artist)
+    try:
+        response = requests.post("http://playlists:5000/playlists/add_song/?playlist_id=" + str(playlist_id) + "&title=" + title + "&artist=" + artist + "&username=" + username)
 
-    if response.status_code == 200 : success = response.json()  # TODO: call
-    else:
-        message = 'Failed to add song'
-        status = 400
-        headers = {'Content-Type': 'text/plain'}
-        return Response(message, status=status, headers=headers)
+        if response.status_code == 200 : success = response.json() 
+        else:
+            message = 'Failed to add song'
+            status = 400
+            headers = {'Content-Type': 'text/plain'}
+            return Response(message, status=status, headers=headers)
+    except requests.exceptions.ConnectionError as e:
+            # Handle the connection error when 'friends' host cannot be reached
+            print("Error: Connection to 'playlists' host failed.",flush=True)
 
-    ######################################### FIX ALWAYS 200 even when not pushed
+    ######################################### TODO FIX ALWAYS 200 even when not pushed
 
     # TODO: call
     return redirect(f'/playlists/{playlist_id}')
@@ -297,17 +339,20 @@ def invite_user_to_playlist(playlist_id):
     # ================================
     recipient = request.form['user']
 
-    response = requests.post("http://playlists:5000/playlists/share/?playlist_id=" + str(playlist_id) + "&username=" + recipient)
+    try:
+        response = requests.post("http://playlists:5000/playlists/share/?playlist_id=" + str(playlist_id) + "&username=" + recipient)
 
-    if response.status_code == 200 : success = response.json()  # TODO: call
-    else:
-        message = 'Failed to share playlist with ' + recipient
-        status = 400
-        headers = {'Content-Type': 'text/plain'}
-        return Response(message, status=status, headers=headers)
+        if response.status_code == 200 : success = response.json()  # TODO: call
+        else:
+            message = 'Failed to share playlist with ' + recipient
+            status = 400
+            headers = {'Content-Type': 'text/plain'}
+            return Response(message, status=status, headers=headers)
+    except requests.exceptions.ConnectionError as e:
+            # Handle the connection error when 'friends' host cannot be reached
+            print("Error: Connection to 'playlists' host failed.",flush=True)
 
-    ######################################### FIX ALWAYS 200 even when not pushed
-    # TODO: call
+    ######################################### TODO FIX ALWAYS 200 even when not pushed
     return redirect(f'/playlists/{playlist_id}')
 
 

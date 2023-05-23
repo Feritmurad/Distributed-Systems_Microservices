@@ -30,6 +30,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "playlists" <<-EOSQ
     CREATE TABLE playlists_song (
         id INTEGER DEFAULT NEXTVAL('playlist_song_id_seq') PRIMARY KEY,
         playlist_id INTEGER NOT NULL,
+        username TEXT NOT NULL,
         title TEXT NOT NULL,
         artist TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
