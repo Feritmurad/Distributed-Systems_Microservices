@@ -58,8 +58,7 @@ class Login(Resource):
     
 class AllUsersResource(Resource):
     def get(self):
-        args = flask_request.args
-        return all_users
+        return all_users()
     
 class UserExists(Resource):
     def get(self):

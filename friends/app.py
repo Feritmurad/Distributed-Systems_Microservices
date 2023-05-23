@@ -38,16 +38,23 @@ def username_exists(username):
     except requests.exceptions.ConnectionError as e:
             # Handle the connection error when 'friends' host cannot be reached
             print("Error: Connection to 'friends' host failed.",flush=True)
+            raise
     
 def add_friends(username1,username2):
-    if username1 != username2:
-        if username_exists(username2):
-            if not checK_friends(username1,username2):
-                cur = conn.cursor()
-                cur.execute("INSERT INTO friends (username1, username2) VALUES (%s, %s);", (username1, username2))
-                conn.commit()
-                return True
-    return False
+    try:
+        if username1 != username2:
+            if username_exists(username2):
+                if not checK_friends(username1,username2):
+                    cur = conn.cursor()
+                    cur.execute("INSERT INTO friends (username1, username2) VALUES (%s, %s);", (username1, username2))
+                    conn.commit()
+                    return True
+        return False
+    except requests.exceptions.ConnectionError as e:
+        headers = {'Content-Type': 'text/plain'}
+        status = 503
+        message = "Error: Connection to 'users' host failed."
+        return Response(message, status=status, headers=headers)
 
 def all_friends(username):
     cur = conn.cursor()
@@ -94,7 +101,7 @@ class FriendsActivities(Resource):
         return activities(args['username'])
 
 
-api.add_resource(AddFriend, '/friends/add/')
+api.add_resource(AddFriend, '/friends/add_friend/')
 api.add_resource(Friends, '/friends/')
 api.add_resource(FriendsExist, '/friends/exist/')
 api.add_resource(FriendsActivities, '/friends/activities/')
