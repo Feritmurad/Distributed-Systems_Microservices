@@ -43,7 +43,7 @@ def username_exists(username):
         else:
             return False
     except requests.exceptions.ConnectionError as e:
-            # Handle the connection error when 'friends' host cannot be reached
+            # Handle the connection error when 'users' host cannot be reached
             print("Error: Connection to 'users' host failed.",flush=True)
     
 def friends_exists(username1,username2):
@@ -74,7 +74,7 @@ def song_exists(title,artist):
         else:
             return False
     except requests.exceptions.ConnectionError as e:
-            # Handle the connection error when 'friends' host cannot be reached
+            # Handle the connection error when 'songs' host cannot be reached
             print("Error: Connection to 'songs' host failed.",flush=True)
 
 def add_playlist(title,username):
@@ -151,6 +151,7 @@ def activities(username):
                 playlist_name = get_title_of_playlist(playlist_id)
                 friend_info_with_status = (user, timestamp.strftime('%Y-%m-%d %H:%M:%S'), 'Added the song ' + '\'' + title + '\' ' + 'by ' + '\'' + artist + '\'' + ' to the playlist' + ' \'' + playlist_name + '\'' )
                 friend_data.extend(friend_info_with_status)
+    formatted_data = []
     if friend_data:
         formatted_data  = [(friend_data[i], friend_data[i+1], friend_data[i+2]) for i in range(0, len(friend_data), 3)]
     return formatted_data

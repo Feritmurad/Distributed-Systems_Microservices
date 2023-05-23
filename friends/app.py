@@ -68,7 +68,9 @@ def activities(username):
                 friend, timestamp = info
                 friend_info_with_status = (friend_username, timestamp.strftime('%Y-%m-%d %H:%M:%S'), 'Added ' + friend + ' as a friend')
                 friend_data.extend(friend_info_with_status)
-    formatted_data  = [(friend_data[i], friend_data[i+1], friend_data[i+2]) for i in range(0, len(friend_data), 3)]
+    formatted_data = []
+    if friend_data:
+        formatted_data  = [(friend_data[i], friend_data[i+1], friend_data[i+2]) for i in range(0, len(friend_data), 3)]
     return formatted_data
    
 class AddFriend(Resource):
