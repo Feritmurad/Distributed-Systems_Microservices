@@ -123,7 +123,8 @@ def all_songs_playlist(playlist_id):
 
 def activities(username):
     friends = get_friends(username)
-    friend_usernames = [friend[0] if friend[0] != username else friend[1] for friend in friends]
+    friend_usernames = []
+    if friends: friend_usernames = [friend[0] if friend[0] != username else friend[1] for friend in friends]
     friend_data = []
     for friend_username in friend_usernames:
         cur = conn.cursor()

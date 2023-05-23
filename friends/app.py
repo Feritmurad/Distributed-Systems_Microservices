@@ -56,7 +56,8 @@ def all_friends(username):
 
 def activities(username):
     friends = all_friends(username)
-    friend_usernames = [friend[0] if friend[0] != username else friend[1] for friend in friends]
+    friend_usernames = []
+    if friends: friend_usernames = [friend[0] if friend[0] != username else friend[1] for friend in friends]
     friend_data = []
     cur = conn.cursor()
     for friend_username in friend_usernames:
